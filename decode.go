@@ -134,7 +134,7 @@ func NewDecoder(reader io.Reader) (dec *Decoder, err error) {
 	return
 }
 
-// Started check the record mp3 stream started ot not.
+// Started check the record mp3 stream started or not.
 func (dec *Decoder) Started() (channel chan bool) {
 	channel = make(chan bool)
 	go func() {

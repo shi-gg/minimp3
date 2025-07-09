@@ -2,7 +2,6 @@ package minimp3
 
 import (
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"sync"
@@ -66,7 +65,7 @@ func TestDecodeFull(t *testing.T) {
 	var dec *Decoder
 	var data, file []byte
 
-	if file, err = ioutil.ReadFile("./test.mp3"); err != nil {
+	if file, err = os.ReadFile("./test.mp3"); err != nil {
 		t.Error(err)
 	}
 
@@ -74,7 +73,7 @@ func TestDecodeFull(t *testing.T) {
 		t.Error(err)
 	}
 
-	ioutil.WriteFile("test2.pcm", data, 0644)
+	os.WriteFile("test2.pcm", data, 0644)
 
 	<-time.After(time.Second)
 	dec.Close()
