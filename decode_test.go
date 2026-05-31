@@ -83,23 +83,22 @@ func TestDecodeFull(t *testing.T) {
 }
 
 func TestDecoder_CloseEarly1(t *testing.T) {
-	var err error
-	var file *os.File
-	var dec *Decoder
+	file, err := os.Open("./test.mp3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
 
-	if file, err = os.Open("./test.mp3"); err != nil {
-		t.Error(err)
+	dec, err := NewDecoder(file)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if dec, err = NewDecoder(file); err != nil {
-		t.Error(err)
-	}
+
 	dec.Close()
-	started := dec.Started()
-	<-started
-	dec.decoderLocker.Lock()
-	defer dec.decoderLocker.Unlock()
-	if dec.SampleRate != 0 || dec.Channels != 0 {
-		t.Error("minimp3 decoder cannot be closed correctly.")
+
+	_, err = dec.Read(make([]byte, 1024))
+	if err != io.EOF {
+		t.Errorf("Read after Close should return EOF, got %v", err)
 	}
 }
 
