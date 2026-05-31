@@ -97,10 +97,8 @@ func TestDecoder_CloseEarly1(t *testing.T) {
 	started := dec.Started()
 	<-started
 	dec.decoderLocker.Lock()
-	sr := dec.SampleRate
-	ch := dec.Channels
-	dec.decoderLocker.Unlock()
-	if sr != 0 || ch != 0 {
+	defer dec.decoderLocker.Unlock()
+	if dec.SampleRate != 0 || dec.Channels != 0 {
 		t.Error("minimp3 decoder cannot be closed correctly.")
 	}
 }
