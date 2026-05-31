@@ -8,53 +8,62 @@ import (
 	"time"
 )
 
-// TestIssue18DelayPutData ...
+const delayDuration = 100 * time.Millisecond
+
 func TestIssue18DelayPutData(t *testing.T) {
+	t.Parallel()
+
 	reader, writer := io.Pipe()
 	dec, err := NewDecoder(reader)
 	if err != nil {
-		t.Errorf("NewDecoder failed: %v", err)
+		t.Fatal(err)
 	}
+	defer dec.Close()
+
 	go func() {
-		time.Sleep(3 * time.Second)
+		time.Sleep(delayDuration)
 		file, err := os.ReadFile("test.mp3")
 		if err != nil {
-			t.Errorf("open file failed: %v", err)
+			t.Error(err)
+			return
 		}
 		_, err = io.Copy(writer, bytes.NewReader(file))
 		if err != nil {
-			t.Errorf("copy mp3 data to pipe failed: %v", err)
+			t.Error(err)
+			return
 		}
-		writer.Close() // nolint: errcheck
+		writer.Close()
 	}()
-	// seems like the 'dec.Started' is unnecessary here
+
 	data, err := io.ReadAll(dec)
 	if err != nil {
-		t.Errorf("read the whole decoded data failed: %v", err)
+		t.Fatal(err)
 	}
 	if len(data) != 44928 {
-		t.Errorf("decode mp3 file failed, real is 44928, but got %d", len(data))
+		t.Errorf("unexpected pcm length: got %d, want 44928", len(data))
 	}
 }
 
-// TestIssue18GracefulExit ...
 func TestIssue18GracefulExit(t *testing.T) {
+	t.Parallel()
+
 	reader, writer := io.Pipe()
 	dec, err := NewDecoder(reader)
 	if err != nil {
-		t.Errorf("NewDecoder failed: %v", err)
+		t.Fatal(err)
 	}
+	defer dec.Close()
+
 	go func() {
-		time.Sleep(3 * time.Second)
-		writer.Close() // nolint: errcheck
+		time.Sleep(delayDuration)
+		writer.Close()
 	}()
-	// seems like the 'dec.Started' is necessary here
-	// if the Decoder input reader is closed, then the Decoder.Read will be returned
+
 	data, err := io.ReadAll(dec)
 	if err != nil {
-		t.Errorf("read the whole decoded data failed: %v", err)
+		t.Fatal(err)
 	}
 	if len(data) != 0 {
-		t.Errorf("graceful exit read something data")
+		t.Errorf("expected no data on graceful exit, got %d bytes", len(data))
 	}
 }
