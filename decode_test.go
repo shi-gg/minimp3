@@ -24,7 +24,9 @@ func TestDecoder(t *testing.T) {
 	started := dec.Started()
 	<-started
 
+	dec.decoderLocker.Lock()
 	log.Printf("Convert audio sample rate: %d, channels: %d\n", dec.SampleRate, dec.Channels)
+	dec.decoderLocker.Unlock()
 
 	if pcmFile, err = os.Create("test1.pcm"); err != nil {
 		t.Error(err)
@@ -94,7 +96,11 @@ func TestDecoder_CloseEarly1(t *testing.T) {
 	dec.Close()
 	started := dec.Started()
 	<-started
-	if dec.SampleRate != 0 || dec.Channels != 0 {
+	dec.decoderLocker.Lock()
+	sr := dec.SampleRate
+	ch := dec.Channels
+	dec.decoderLocker.Unlock()
+	if sr != 0 || ch != 0 {
 		t.Error("minimp3 decoder cannot be closed correctly.")
 	}
 }
@@ -116,7 +122,9 @@ func TestDecoder_CloseEarly2(t *testing.T) {
 
 	dec.Close()
 
+	dec.decoderLocker.Lock()
 	log.Printf("Convert audio sample rate: %d, channels: %d\n", dec.SampleRate, dec.Channels)
+	dec.decoderLocker.Unlock()
 
 	if pcmFile, err = os.Create("test4.pcm"); err != nil {
 		t.Error(err)
