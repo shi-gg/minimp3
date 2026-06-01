@@ -1,3 +1,3 @@
-module github.com/tosone/minimp3
+module github.com/shi-gg/minimp3
 
 go 1.18

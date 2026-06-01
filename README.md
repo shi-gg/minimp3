@@ -1,6 +1,6 @@
 # minimp3
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/tosone/minimp3.svg)](https://pkg.go.dev/github.com/tosone/minimp3) [![Builder](https://github.com/tosone/minimp3/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/tosone/minimp3/actions/workflows/ci.yaml) [![codecov](https://codecov.io/gh/tosone/minimp3/branch/main/graph/badge.svg?token=LUIF0jZw6E)](https://codecov.io/gh/tosone/minimp3)
+[![Go Reference](https://pkg.go.dev/badge/github.com/shi-gg/minimp3.svg)](https://pkg.go.dev/github.com/shi-gg/minimp3) [![Builder](https://github.com/shi-gg/minimp3/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/shi-gg/minimp3/actions/workflows/ci.yaml) [![codecov](https://codecov.io/gh/shi-gg/minimp3/branch/main/graph/badge.svg?token=LUIF0jZw6E)](https://codecov.io/gh/shi-gg/minimp3)
 
 Decode mp3 base on <https://github.com/lieff/minimp3>
 
@@ -9,13 +9,13 @@ Decode mp3 base on <https://github.com/lieff/minimp3>
 1. The first need Go installed (version 1.15+ is required), then you can use the below Go command to install minimp3.
 
 ``` bash
-$ go get -u github.com/tosone/minimp3
+$ go get -u github.com/shi-gg/minimp3
 ```
 
 2. Import it in your code:
 
 ``` bash
-import "github.com/tosone/minimp3"
+import "github.com/shi-gg/minimp3"
 ```
 
 ## Examples are here
@@ -32,7 +32,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/oto"
-	"github.com/tosone/minimp3"
+	"github.com/shi-gg/minimp3"
 )
 
 func main() {
@@ -82,7 +82,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/oto"
-	"github.com/tosone/minimp3"
+	"github.com/shi-gg/minimp3"
 )
 
 func main() {
@@ -154,7 +154,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/oto"
-	"github.com/tosone/minimp3"
+	"github.com/shi-gg/minimp3"
 )
 
 func main() {
