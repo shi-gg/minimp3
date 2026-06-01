@@ -70,23 +70,24 @@ func NewDecoder(reader io.Reader) (dec *Decoder, err error) {
 				return
 			default:
 			}
+			dec.readerLocker.Lock()
 			if len(dec.data) > BufferSize {
+				dec.readerLocker.Unlock()
 				<-time.After(WaitForDataDuration)
 				continue
 			}
-			var data = make([]byte, 512)
-			var n int
-			n, err = reader.Read(data)
+			dec.readerLocker.Unlock()
+
+			data := make([]byte, 512)
+			n, err := reader.Read(data)
 
 			dec.readerLocker.Lock()
 			dec.data = append(dec.data, data[:n]...)
-			dec.readerLocker.Unlock()
-			if err == io.EOF {
-				dec.originalEof = true
-				break
-			}
 			if err != nil {
 				dec.originalEof = true
+			}
+			dec.readerLocker.Unlock()
+			if err != nil {
 				break
 			}
 		}
@@ -98,31 +99,39 @@ func NewDecoder(reader io.Reader) (dec *Decoder, err error) {
 				return
 			default:
 			}
+			dec.decoderLocker.Lock()
 			if len(dec.decodedData) > BufferSize {
+				dec.decoderLocker.Unlock()
 				<-time.After(WaitForDataDuration)
 				continue
 			}
-			var decoded = [maxSamplesPerFrame * 2]byte{}
-			var decodedLength = C.int(0)
-			var length = C.int(len(dec.data))
+			dec.decoderLocker.Unlock()
+
+			decoded := [maxSamplesPerFrame * 2]byte{}
+			decodedLength := C.int(0)
+
+			dec.readerLocker.Lock()
 			if len(dec.data) == 0 {
+				dec.readerLocker.Unlock()
 				<-time.After(WaitForDataDuration)
 				continue
 			}
+			length := C.int(len(dec.data))
 			frameSize := C.decode(&dec.decode, &dec.info,
 				(*C.uchar)(unsafe.Pointer(&dec.data[0])),
 				&length, (*C.uchar)(unsafe.Pointer(&decoded[0])),
 				&decodedLength)
 			if int(frameSize) == 0 {
+				dec.readerLocker.Unlock()
 				<-time.After(WaitForDataDuration)
 				continue
 			}
+
+			dec.decoderLocker.Lock()
 			dec.SampleRate = int(dec.info.hz)
 			dec.Channels = int(dec.info.channels)
 			dec.Kbps = int(dec.info.bitrate_kbps)
 			dec.Layer = int(dec.info.layer)
-			dec.readerLocker.Lock()
-			dec.decoderLocker.Lock()
 			dec.decodedData = append(dec.decodedData, decoded[:decodedLength]...)
 			if int(frameSize) <= len(dec.data) {
 				dec.data = dec.data[int(frameSize):]
@@ -134,7 +143,7 @@ func NewDecoder(reader io.Reader) (dec *Decoder, err error) {
 	return
 }
 
-// Started check the record mp3 stream started ot not.
+// Started check the record mp3 stream started or not.
 func (dec *Decoder) Started() (channel chan bool) {
 	channel = make(chan bool)
 	go func() {
@@ -144,9 +153,12 @@ func (dec *Decoder) Started() (channel chan bool) {
 				channel <- false
 			default:
 			}
+			dec.decoderLocker.Lock()
 			if len(dec.decodedData) != 0 {
+				dec.decoderLocker.Unlock()
 				channel <- true
 			} else {
+				dec.decoderLocker.Unlock()
 				<-time.After(time.Millisecond * 100)
 			}
 		}
@@ -158,20 +170,27 @@ func (dec *Decoder) Started() (channel chan bool) {
 func (dec *Decoder) Read(data []byte) (n int, err error) {
 	for {
 		select {
-		case <-dec.context.Done(): // if the decoder is stopped, then here should return EOF
+		case <-dec.context.Done():
 			err = io.EOF
 			return
 		default:
 		}
+		dec.readerLocker.Lock()
+		dec.decoderLocker.Lock()
 		if len(dec.data) == 0 && len(dec.decodedData) == 0 && dec.originalEof {
+			dec.decoderLocker.Unlock()
+			dec.readerLocker.Unlock()
 			err = io.EOF
 			return
-		} else if len(dec.decodedData) > 0 {
+		}
+		if len(dec.decodedData) > 0 {
+			dec.readerLocker.Unlock()
 			break
 		}
+		dec.decoderLocker.Unlock()
+		dec.readerLocker.Unlock()
 		<-time.After(WaitForDataDuration)
 	}
-	dec.decoderLocker.Lock()
 	defer dec.decoderLocker.Unlock()
 	n = copy(data, dec.decodedData[:])
 	dec.decodedData = dec.decodedData[n:]
@@ -191,10 +210,10 @@ func DecodeFull(mp3 []byte) (dec *Decoder, decodedData []byte, err error) {
 	dec.decode = C.mp3dec_t{}
 	C.mp3dec_init(&dec.decode)
 	info := C.mp3dec_frame_info_t{}
-	var length = C.int(len(mp3))
+	length := C.int(len(mp3))
 	for {
-		var decoded = [maxSamplesPerFrame * 2]byte{}
-		var decodedLength = C.int(0)
+		decoded := [maxSamplesPerFrame * 2]byte{}
+		decodedLength := C.int(0)
 		frameSize := C.decode(&dec.decode,
 			&info, (*C.uchar)(unsafe.Pointer(&mp3[0])),
 			&length, (*C.uchar)(unsafe.Pointer(&decoded[0])),
